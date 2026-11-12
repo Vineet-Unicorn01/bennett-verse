@@ -1,9 +1,12 @@
 import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parent.parent / ".env.local")
 import secrets
-import json
-import urllib.request
-import urllib.error
+import smtplib
 from datetime import datetime, timedelta, timezone
+from email.message import EmailMessage
 from typing import Optional
 
 import jwt
@@ -22,14 +25,15 @@ JWT_HOURS = int(os.getenv("JWT_HOURS", "24"))
 ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "change-this-demo-token")
 ALLOWED_EMAIL_DOMAIN = os.getenv("ALLOWED_EMAIL_DOMAIN", "bennett.edu.in").lower().strip()
 OTP_MINUTES = int(os.getenv("OTP_MINUTES", "10"))
-RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
-EMAIL_FROM = os.getenv("EMAIL_FROM", "")
+SMTP_HOST = os.getenv("SMTP_HOST", "")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USERNAME = os.getenv("SMTP_USERNAME", "")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+SMTP_FROM = os.getenv("SMTP_FROM", SMTP_USERNAME)
 DEV_SHOW_OTP = os.getenv("DEV_SHOW_OTP", "false").lower() == "true"
 
-if DATABASE_URL.startswith("postgresql://"):
-    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
-engine = create_engine(DATABASE_URL, connect_args=connect_args, pool_pre_ping=True)
+engine = create_engine(DATABASE_URL, connect_args=connect_args)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 password_hash = PasswordHash.recommended()
 bearer = HTTPBearer(auto_error=False)
@@ -136,36 +140,27 @@ class StoryOut(BaseModel):
         from_attributes = True
 
 def send_verification_email(to_email: str, code: str):
-    if not RESEND_API_KEY or not EMAIL_FROM:
+    if not all([SMTP_HOST, SMTP_USERNAME, SMTP_PASSWORD, SMTP_FROM]):
         if DEV_SHOW_OTP:
             print(f"[DEVELOPMENT ONLY] Bennett Verse verification code for {to_email}: {code}")
             return
         raise HTTPException(status_code=503, detail="Email delivery is not configured. Please contact the site administrator.")
-
-    payload = {
-        "from": EMAIL_FROM,
-        "to": [to_email],
-        "subject": "Verify your Bennett Verse account",
-        "text": (
-            f"Your Bennett Verse verification code is {code}.\\n\\n"
-            f"It expires in {OTP_MINUTES} minutes. If you did not request this, ignore this email.\\n\\n"
-            "Bennett Verse is an independent student-led media platform and is not an official university service."
-        ),
-    }
-    request = urllib.request.Request(
-        "https://api.resend.com/emails",
-        data=json.dumps(payload).encode("utf-8"),
-        headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json"},
-        method="POST",
+    msg = EmailMessage()
+    msg["Subject"] = "Verify your Bennett Verse account"
+    msg["From"] = SMTP_FROM
+    msg["To"] = to_email
+    msg.set_content(
+        f"Your Bennett Verse verification code is {code}.\n\n"
+        f"It expires in {OTP_MINUTES} minutes. If you did not request this, ignore this email.\n\n"
+        "Bennett Verse is an independent student-led media platform and is not an official university service."
     )
     try:
-        with urllib.request.urlopen(request, timeout=15) as response:
-            if response.status not in (200, 201):
-                raise HTTPException(status_code=502, detail="Email provider rejected the verification email.")
-    except urllib.error.HTTPError:
-        raise HTTPException(status_code=502, detail="Email provider could not send the verification email.")
-    except urllib.error.URLError:
-        raise HTTPException(status_code=502, detail="Could not reach the email provider.")
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15) as server:
+            server.starttls()
+            server.login(SMTP_USERNAME, SMTP_PASSWORD)
+            server.send_message(msg)
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not send verification email. Check email service configuration.")
 
 def create_access_token(user: User):
     now = datetime.now(timezone.utc)

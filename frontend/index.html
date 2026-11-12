@@ -20,9 +20,8 @@
 
 <div class="modal" id="submitModal"><div class="box"><div class="head"><h2>Submit a campus story</h2><button class="btn" data-close="submitModal">Close</button></div><p class="small">Your submission remains private until an editor approves it.</p><form id="storyForm"><div class="field"><label>Headline</label><input name="title" required minlength="5" maxlength="120"></div><div class="field"><label>Category</label><select name="category" required><option value="">Choose category</option><option>Campus News</option><option>Academics</option><option>Placements</option><option>Hackathons & Tech</option><option>Events</option><option>Achievements</option><option>Sports</option><option>Opportunities</option></select></div><div class="field"><label>Summary</label><textarea name="summary" required minlength="20" maxlength="1000"></textarea></div><div class="field"><label>Official source URL (optional)</label><input name="source_url" type="url"></div><button class="btn primary">Send for review</button></form></div></div>
 <div class="modal" id="adminModal"><div class="box"><div class="head"><h2>Editorial desk</h2><button class="btn" data-close="adminModal">Close</button></div><div class="field"><label>Admin token</label><input id="token" type="password" placeholder="Editorial admin token"></div><button class="btn primary" id="loadPending">Load pending submissions</button><div id="pending" style="margin-top:15px"></div></div></div>
-<script src="config.js"></script>
 <script>
-const API=window.BV_API_BASE_URL||localStorage.getItem("bv_api_url")||"http://127.0.0.1:8000";
+const API=localStorage.getItem("bv_api_url")||"http://127.0.0.1:8000";
 const cats=["All","Campus News","Academics","Placements","Hackathons & Tech","Events","Achievements","Sports","Opportunities"];let active="All",timer;
 const $=id=>document.getElementById(id);const getToken=()=>sessionStorage.getItem("bv_token");
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
