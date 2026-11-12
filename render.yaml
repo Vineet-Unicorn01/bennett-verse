@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: bennett-verse-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_TOKEN
+        generateValue: true
+      - key: JWT_HOURS
+        value: "24"
+      - key: ALLOWED_EMAIL_DOMAIN
+        value: bennett.edu.in
+      - key: OTP_MINUTES
+        value: "10"
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: DEV_SHOW_OTP
+        value: "false"
+      - key: CORS_ORIGINS
+        value: https://YOUR-FRONTEND.onrender.com
+  - type: web
+    name: bennett-verse-site
+    runtime: static
+    plan: free
+    rootDir: frontend
+    buildCommand: echo "Static site: no build required"
+    staticPublishPath: .
