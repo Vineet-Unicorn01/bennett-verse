@@ -21,7 +21,7 @@
 </div></main></div>
 <div class="modal" id="editModal"><div class="dialog"><div class="dialoghead"><h2>Edit story</h2><button class="btn" data-close="editModal">Close</button></div><form id="editForm"><input type="hidden" name="id"><div class="field"><label>Headline</label><input name="title" required minlength="5" maxlength="120"></div><div class="field"><label>Category</label><select name="category"><option>Campus News</option><option>Academics</option><option>Placements</option><option>Hackathons & Tech</option><option>Events</option><option>Achievements</option><option>Sports</option><option>Opportunities</option></select></div><div class="field"><label>Summary</label><textarea name="summary" required minlength="20" maxlength="1000"></textarea></div><div class="field"><label>Source URL</label><input name="source_url" type="url"></div><button class="btn primary">Save changes</button></form></div></div><div class="toast" id="toast"></div>
 <script>
-const API=localStorage.getItem("bv_api_url")||"http://127.0.0.1:8000";let token="",stories=[],contributors=[];
+const API="https://bennett-verse-api.vercel.app";let token="",stories=[],contributors=[];
 const $=id=>document.getElementById(id);
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function date(s){return new Date(s).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"})}
